@@ -7,7 +7,7 @@ from pydantic import BaseModel, ValidationError
 
 
 app = FastAPI()
-dbase = MongoDB("mongodb+srv://admin:ixCOuGVswTAUYEgJ@ifscluster.xoaqced.mongodb.net/", "ifs", "users")
+dbase = MongoDB("", "", "")
 gmail = smtplib.SMTP('smtp.gmail.com', 587)
 gmail.login("ifs2343234@gmail.com", "ifs12345678")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
