@@ -12,12 +12,12 @@ import secrets
 authRouter = APIRouter(
     prefix="/auth",
     tags=['auth'],
-    responses={
-        400: "Bad request",
-        404: "User not found",
-        403: "Incorrect password",
-        408: "Code is timeout"
-    }
+    # responses={
+    #     400: "Bad request",
+    #     404: "User not found",
+    #     403: "Incorrect password",
+    #     408: "Code is timeout"
+    # }
 )
 
 mail = SMTP_SSL('smtp.yandex.ru')
@@ -34,14 +34,14 @@ def gen_randkey():
 def login(username:str, password:str):
 
     if not db.is_user(username=username):
-        return JSONResponse(status_code=404, content={"message": f"Not found user {username}"})
+        raise HTTPException(404, f"Not found user {username}")
     
     user = db.find_by_username(username) # User object from database
 
     if get_password_hash(password) == user["password_hash"]:
         return {"status": "OK"}
     
-    return JSONResponse(status_code=403, content={"message": f"Incorrect password"})
+    raise HTTPException(403, f"Incorrect password")
     
     
 @authRouter.post("/confirm")
@@ -53,7 +53,7 @@ def confirm(rayid:str, code:int):
             redisdb.removeConfirmRay(rayid)
             return "OK"
         else: 
-            return JSONResponse(status_code=401, content={"message": "Incorrect code"})
+            raise HTTPException(401, "Incorrect code")
     except Exception as ex:
         print('[authRouter] Confirm code error')
         print(ex)
@@ -62,9 +62,9 @@ def confirm(rayid:str, code:int):
 @authRouter.post("/register")
 def register(username:str, password:str, email:str, first_name:str, last_name:str):
     if db.is_user(username):
-        return JSONResponse(status_code=400, content={"message": "Username allready uses"})
+        raise HTTPException(400, "Username allready uses")
     try:
-        user = User(username, get_password_hash(password), email, False, {first_name, last_name, "", ""}, set(), set())
+        user = User(username=username, password_hash=get_password_hash(password), email=email, email_confirmed=False, profile={"first_name": first_name, "last_name": last_name, "status": "", "profile_picture": ""}, projects=set(), integrations=set())
         db.create_user(user)
         ray_id = gen_randkey()
         conf_code = randint(1000,9999)

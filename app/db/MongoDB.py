@@ -14,11 +14,11 @@ class MongoDB(object):
 
     def create_user(self, user: User):
         try:
-            if self._users_collection.find_one({"username": user.get('username')}) == None:
+            if self._users_collection.find_one({"username": user.username}) == None:
                 self._users_collection.insert_one(user)
-                print(f"Added New user: {user.get('username')}")
+                print(f"Added New user: {user.username}")
             else:
-                print(f"User: {user.get('username')} in collection")
+                print(f"User: {user.username} in collection")
         except Exception as ex:
             print("[create_user] Some problem...")
             print(ex)

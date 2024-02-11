@@ -6,10 +6,10 @@ name = "pypi"
 [packages]
 fastapi = "==0.109.0"
 uvicorn = "==0.27.0.post1"
-pymongo = "==4.6.1"
 redis = "*"
 passlib = "*"
-hypercorn = "*"
+bcrypt = "*"
+pymongo = {extras = ["srv"], version = "*"}
 
 [dev-packages]
 
