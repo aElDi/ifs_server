@@ -23,4 +23,7 @@ class RedisDB():
     def removeConfirmRay(self, rayid: str):
         self._client.delete(f"keys:{rayid}")
 
+    def __del__(self):
+        self._client.close()
+
 redisdb = RedisDB(REDIS_HOST, REDIS_PORT, REDIS_PASSWORD)

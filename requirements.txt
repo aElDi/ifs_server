@@ -2,5 +2,5 @@ fastapi==0.109.0
 uvicorn==0.27.0.post1
 pymongo[srv]==4.6.1
 redis
-passlib
-bcrypt
+bcrypt==4.0.1
+passlib[bcrypt]

@@ -7,9 +7,9 @@ name = "pypi"
 fastapi = "==0.109.0"
 uvicorn = "==0.27.0.post1"
 redis = "*"
-passlib = "*"
-bcrypt = "*"
 pymongo = {extras = ["srv"], version = "*"}
+passlib = {extras = ["bcrypt"], version = "*"}
+bcrypt = "==4.0.1"
 
 [dev-packages]
 

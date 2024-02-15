@@ -1,14 +1,13 @@
 from random import randint
-from fastapi import APIRouter, HTTPException, Response
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, HTTPException
 from ..config import GMAIL_EMAIL, GMAIL_PASSWORD
 from ..db.RedisDB import redisdb
 from ..models.User import User
 from ..db.MongoDB import db
 from passlib.context import CryptContext
 from smtplib import SMTP_SSL
+from email.mime.multipart import MIMEMultipart
 import secrets
-
 authRouter = APIRouter(
     prefix="/auth",
     tags=['auth'],
@@ -22,10 +21,10 @@ authRouter = APIRouter(
 
 mail = SMTP_SSL('smtp.yandex.ru')
 mail.login(GMAIL_EMAIL, GMAIL_PASSWORD)
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt"])
 
 def get_password_hash(password):
-    return pwd_context.hash(password)
+    return pwd_context.hash(password, salt="d"*21+"1")
 
 def gen_randkey():
     return secrets.token_hex(16)
@@ -37,7 +36,7 @@ def login(username:str, password:str):
         raise HTTPException(404, f"Not found user {username}")
     
     user = db.find_by_username(username) # User object from database
-
+    print(get_password_hash(password), user['password_hash'])
     if get_password_hash(password) == user["password_hash"]:
         return {"status": "OK"}
     
@@ -45,10 +44,11 @@ def login(username:str, password:str):
     
     
 @authRouter.post("/confirm")
-def confirm(rayid:str, code:int):
+def confirm(rayid:str, code:str):
     try:
         confirm_code = redisdb.getConfirmRay(rayid)
-        if code == confirm_code:
+        print(confirm_code)
+        if code == confirm_code["conf_code"]:
             db.change_user(confirm_code["username"], "email_confirmed", True)
             redisdb.removeConfirmRay(rayid)
             return "OK"
@@ -61,6 +61,7 @@ def confirm(rayid:str, code:int):
 
 @authRouter.post("/register")
 def register(username:str, password:str, email:str, first_name:str, last_name:str):
+    
     if db.is_user(username):
         raise HTTPException(400, "Username allready uses")
     try:
@@ -68,7 +69,12 @@ def register(username:str, password:str, email:str, first_name:str, last_name:st
         db.create_user(user)
         ray_id = gen_randkey()
         conf_code = randint(1000,9999)
-        mail.sendmail(GMAIL_EMAIL, email, f"Your confirmation key:\n<b>{conf_code}</b>")
+        mail_msg = MIMEMultipart()
+        mail_msg['From']    = GMAIL_EMAIL                       # Адресат
+        mail_msg['To']      = email                             # Получатель
+        mail_msg['Subject'] = 'Confirm code'                    # Тема сообщения
+        mail_msg.attach(f"Your confirmation key:\n<b>{conf_code}</b>", "html", "utf-8")
+        mail.send_message(mail_msg)
         redisdb.addConfirmRay(ray_id, conf_code, username)
         return {"ray_id": ray_id}
     except Exception as ex:

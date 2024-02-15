@@ -57,5 +57,8 @@ class MongoDB(object):
         except Exception as ex:
             print("[change_user] Some problem...")
             print(ex)
+            
+    def __del__(self):
+        self._client.close()
 
 db = MongoDB(MONGO_URI, "ifs")
